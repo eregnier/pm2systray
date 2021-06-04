@@ -22,7 +22,7 @@ https://user-images.githubusercontent.com/5399780/120869083-db00e500-c595-11eb-9
 - lightweight and **one binary app**
 - one click control pm2 processes `start | stop`
 - one click `save` pm2 configuration
-- work on `linux`, and should alwo work on `windows` and `macos` (not tested yet)
+- work on `linux`, `windows` and should also work on `macos` (not tested yet)
 
 ## Notes
 
