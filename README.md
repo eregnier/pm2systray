@@ -10,7 +10,11 @@ I also wanted a low footprint on this app and make it portable.
 
 Whatsmore, I wanted to code some go things and create some systray for something that can be **quite usefull**. this is done.
 
-![caption](./demo.webm)
+
+
+https://user-images.githubusercontent.com/5399780/120869083-db00e500-c595-11eb-9701-8319ee1a4d54.mp4
+
+
 
 ## Features
 
