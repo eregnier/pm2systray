@@ -1,5 +1,6 @@
 build: 
-	go build -o main *.go
+	go build -o pm2systray *.go
+	chmod +x pm2systray
 
 dev:
 	fresh
