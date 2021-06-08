@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os/exec"
-	"strings"
 
 	"github.com/getlantern/systray"
 )
@@ -29,24 +29,24 @@ func onReady() {
 	systray.AddSeparator()
 	mQuit.SetIcon(iconData)
 
-	out, err := exec.Command("pm2", "l").Output()
+	out, err := exec.Command("pm2", "jlist").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	lines := strings.Split(string(out), "\n")
-	for x, line := range lines {
-		if x > 2 && x < len(lines)-2 {
-			status := strings.Contains(line, "online")
-			name := strings.Split(line[12:], " ")[0]
-			tooltip := fmt.Sprintf("Enable / disable %s process", name)
-			process := Process{
-				name,
-				systray.AddMenuItemCheckbox(name, tooltip, status),
-			}
-			printProcess(process, "[I]")
-
-			processes = append(processes, process)
+	var processList []struct {
+		Name string `json:"name"`
+		Env  struct {
+			Status string `json:"status"`
+		} `json:"pm2_env"`
+	}
+	json.Unmarshal(out, &processList)
+	for _, processItem := range processList {
+		tooltip := fmt.Sprintf("Enable / disable %s process", processItem.Name)
+		process := Process{
+			processItem.Name,
+			systray.AddMenuItemCheckbox(processItem.Name, tooltip, processItem.Env.Status == "online"),
 		}
+		processes = append(processes, process)
 	}
 	systray.AddSeparator()
 	mSave := systray.AddMenuItem("save", "Save current configuration")
