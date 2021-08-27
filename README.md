@@ -14,7 +14,9 @@ Whatsmore, I wanted to code some go things and create some systray for something
 
 https://user-images.githubusercontent.com/5399780/120869083-db00e500-c595-11eb-9701-8319ee1a4d54.mp4
 
+## Requirements
 
+`sudo apt-get install build-essential libgtk-3-dev`
 
 ## Features
 
