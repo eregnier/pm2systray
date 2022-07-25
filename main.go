@@ -1,48 +1,70 @@
 package main
 
 import (
-	"encoding/base64"
+	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/getlantern/systray"
 	"log"
 	"os/exec"
-
-	"github.com/getlantern/systray"
+	"sort"
 )
+
+//go:embed pm2.ico
+var icon []byte
+
+type WidgetProcess struct {
+	Name     string
+	MenuItem *systray.MenuItem
+}
+
+type ModelProcess struct {
+	Name string `json:"name"`
+	Env  struct {
+		Status string `json:"status"`
+	} `json:"pm2_env"`
+}
+
+var processes []WidgetProcess
 
 func main() {
 	systray.Run(onReady, func() {})
 }
 
-type Process struct {
-	Name     string
-	MenuItem *systray.MenuItem
+func onReady() {
+	processList := getOrderedProcesses()
+	render(processList)
+
+	for _, process := range processes {
+		go registerProcess(process)
+	}
 }
 
-var processes []Process
-
-func onReady() {
-	iconData, _ := base64.StdEncoding.DecodeString(getFiles()["pm2.ico"])
-	systray.SetIcon(iconData)
-	systray.SetTitle("Pm2 systray")
-	mQuit := systray.AddMenuItem("Exit", "Quit pm2 systray")
-	systray.AddSeparator()
-	mQuit.SetIcon(iconData)
-
+func getOrderedProcesses() []ModelProcess {
 	out, err := exec.Command("pm2", "jlist").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	var processList []struct {
-		Name string `json:"name"`
-		Env  struct {
-			Status string `json:"status"`
-		} `json:"pm2_env"`
+	var processList []ModelProcess
+	err = json.Unmarshal(out, &processList)
+	if err != nil {
+		log.Fatal("unable to read pm2 information")
 	}
-	json.Unmarshal(out, &processList)
+	sort.Slice(processList, func(i, j int) bool {
+		return processList[i].Name < processList[j].Name
+	})
+	return processList
+}
+
+func render(processList []ModelProcess) {
+	systray.SetIcon(icon)
+	systray.SetTitle("Pm2 systray")
+	mQuit := systray.AddMenuItem("Exit", "Quit pm2 systray")
+	systray.AddSeparator()
+	mQuit.SetIcon(icon)
 	for _, processItem := range processList {
 		tooltip := fmt.Sprintf("Enable / disable %s process", processItem.Name)
-		process := Process{
+		process := WidgetProcess{
 			processItem.Name,
 			systray.AddMenuItemCheckbox(processItem.Name, tooltip, processItem.Env.Status == "online"),
 		}
@@ -50,12 +72,9 @@ func onReady() {
 	}
 	systray.AddSeparator()
 	mSave := systray.AddMenuItem("save", "Save current configuration")
-
 	go registerExit(*mQuit)
 	go registerSave(*mSave)
-	for _, process := range processes {
-		go registerProcess(process)
-	}
+
 }
 
 func registerExit(mQuit systray.MenuItem) {
@@ -66,15 +85,20 @@ func registerExit(mQuit systray.MenuItem) {
 		}
 	}
 }
+
 func registerSave(mSave systray.MenuItem) {
 	for {
 		select {
 		case <-mSave.ClickedCh:
-			exec.Command("pm2", "save").Run()
+			err := exec.Command("pm2", "save").Run()
+			if err != nil {
+				return
+			}
 		}
 	}
 }
-func registerProcess(process Process) {
+
+func registerProcess(process WidgetProcess) {
 	for {
 		select {
 		case <-process.MenuItem.ClickedCh:
@@ -89,7 +113,8 @@ func registerProcess(process Process) {
 		}
 	}
 }
-func toggleProcess(process Process, enable bool) {
+
+func toggleProcess(process WidgetProcess, enable bool) {
 	var action string
 	if enable {
 		action = "start"
@@ -99,6 +124,6 @@ func toggleProcess(process Process, enable bool) {
 	exec.Command("pm2", action, process.Name).Run()
 }
 
-func printProcess(process Process, prefix string) {
+func printProcess(process WidgetProcess, prefix string) {
 	fmt.Printf("%s %v | %s", prefix, process.MenuItem.Checked(), process.Name)
 }

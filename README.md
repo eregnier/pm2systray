@@ -16,7 +16,7 @@ https://user-images.githubusercontent.com/5399780/120869083-db00e500-c595-11eb-9
 
 ## Requirements
 
-`sudo apt-get install build-essential libgtk-3-dev libappindicator3-dev gir1.2-appindicator3-0.1`
+`sudo apt-get install build-essential libgtk-3-dev libappindicator3-dev gir1.2-appindicator3-0.1 libayatana-appindicator3-dev`
 
 ## Features
 
